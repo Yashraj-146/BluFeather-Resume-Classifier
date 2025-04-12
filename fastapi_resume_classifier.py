@@ -9,7 +9,7 @@ import os
 app = FastAPI()
 
 # Load trained model and tokenizer
-MODEL_PATH = "https://drive.google.com/file/d/1Y16lVw8Gd_qv19QeTm4Y9YkEddqSUpEU/view?usp=drive_link"  # Ensure correct model path
+MODEL_PATH = "/Users/yashraj146/Documents/resume_classifier/resume_classifier_colab"  # Ensure correct model path
 tokenizer = DistilBertTokenizer.from_pretrained(MODEL_PATH)
 model = DistilBertForSequenceClassification.from_pretrained(MODEL_PATH)
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
