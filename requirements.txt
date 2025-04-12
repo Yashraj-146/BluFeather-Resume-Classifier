@@ -7,3 +7,4 @@ pandas
 numpy
 pymupdf
 python-docx
+python-multipart
