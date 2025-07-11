@@ -8,27 +8,25 @@ import os
 
 app = FastAPI()
 
-# Load model and tokenizer from relative directory
-BASE_DIR = os.path.dirname(__file__)
-MODEL_PATH = os.path.join(BASE_DIR, "../resume_classifier_colab")  # relative path
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+# ✅ Load model from Hugging Face
+HF_REPO = "Yashraj-146/resume-classifier"  # <-- replace with your actual Hugging Face username
 
-try:
-    tokenizer = DistilBertTokenizer.from_pretrained(MODEL_PATH)
-    model = DistilBertForSequenceClassification.from_pretrained(MODEL_PATH)
-    model.to(device)
-except Exception as e:
-    print(f"Model load failed: {e}")
+device = torch.device("cpu")  # Vercel doesn't support GPU
+tokenizer = DistilBertTokenizer.from_pretrained(HF_REPO)
+model = DistilBertForSequenceClassification.from_pretrained(HF_REPO)
+model.to(device)
 
-# Extract text from PDF
+# Function to extract text from a PDF resume
 def extract_text_from_pdf(pdf_path):
     with pdfplumber.open(pdf_path) as pdf:
         return "\n".join(page.extract_text() for page in pdf.pages if page.extract_text())
 
-# Predict resume match score
+# Function to predict resume match score
 def predict_resume_match(resume_text, job_description):
-    text = resume_text + " [SEP] " + job_description
+    """Ensures that the model actually uses the uploaded resume and new job description dynamically."""
+    text = resume_text + " [SEP] " + job_description  # Dynamically adding new job description
     encoding = tokenizer(text, truncation=True, padding='max_length', max_length=512, return_tensors="pt")
+    
     input_ids = encoding["input_ids"].to(device)
     attention_mask = encoding["attention_mask"].to(device)
 
@@ -38,22 +36,28 @@ def predict_resume_match(resume_text, job_description):
     
     score = torch.softmax(output.logits, dim=1)[0][1].item()
     label = "Good Match" if score > 0.75 else "Not a Match"
-    return score, label
+    
+    return score, label  # Ensures the score is based on the new job description
 
+# FastAPI Endpoint for Uploading Resume & Entering Job Description
 @app.post("/upload_resume/", response_class=HTMLResponse)
 async def upload_resume(file: UploadFile = File(...), job_description: str = Form(...)):
-    temp_dir = os.path.join(BASE_DIR, "temp")
-    os.makedirs(temp_dir, exist_ok=True)
-    file_location = os.path.join(temp_dir, file.filename)
+    file_location = f"temp/{file.filename}"
+    os.makedirs("temp", exist_ok=True)  # Ensure temp directory exists
 
     with open(file_location, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
 
+    # Extract text from PDF resume
     resume_text = extract_text_from_pdf(file_location)
     if not resume_text:
         return HTMLResponse(content="<h3>Error: Could not extract text from the resume.</h3>", status_code=400)
 
+    # 🔥 Ensuring the newly entered job description is actually used
     score, label = predict_resume_match(resume_text, job_description)
+
+    # Return result as an HTML page
+    # Truncate job description to 500 chars (optional)
 
     return f"""
     <html>
@@ -69,11 +73,14 @@ async def upload_resume(file: UploadFile = File(...), job_description: str = For
     </html>
     """
 
+# Simple HTML Frontend for Uploading PDF Resume & Entering Job Description
 @app.get("/", response_class=HTMLResponse)
 def main():
     return """
     <html>
-    <head><title>Resume Match</title></head>
+    <head>
+        <title>Resume Match</title>
+    </head>
     <body>
         <h2>Upload Resume & Enter Job Description</h2>
         <form action="/upload_resume/" enctype="multipart/form-data" method="post">
