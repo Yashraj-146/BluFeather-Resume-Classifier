@@ -1,0 +1,11 @@
+env/
+venv/
+resume_classifier_colab/
+resumes/
+temp/
+sample_resume.pdf
+*.ipynb
+__pycache__/
+*.pt
+*.safetensors
+*.pkl
