@@ -1,11 +1,18 @@
-env/
-venv/
-resume_classifier_colab/
-resumes/
-temp/
+# Ignore local testing/data files
+ideal_resume_data.csv
 sample_resume.pdf
-*.ipynb
+Ideal_data.py
+
+# Ignore Python cache
 __pycache__/
-*.pt
-*.safetensors
+*.pyc
+*.pyo
 *.pkl
+*.ipynb
+
+# Ignore virtual environments if present
+venv/
+env/
+
+# Ignore Vercel artifacts
+.vercel/
