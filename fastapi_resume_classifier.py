@@ -9,11 +9,16 @@ import os
 app = FastAPI()
 
 # Load trained model and tokenizer
-MODEL_PATH = "/Users/yashraj146/Documents/resume_classifier/resume_classifier_colab"  # Ensure correct model path
-tokenizer = DistilBertTokenizer.from_pretrained(MODEL_PATH)
-model = DistilBertForSequenceClassification.from_pretrained(MODEL_PATH)
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-model.to(device)
+MODEL_PATH = os.environ.get("MODEL_PATH", "/Users/yashraj146/Documents/resume_classifier/resume_classifier_colab")
+# tokenizer = DistilBertTokenizer.from_pretrained(MODEL_PATH)
+# model = DistilBertForSequenceClassification.from_pretrained(MODEL_PATH)
+device = torch.device("mps")
+try:
+    tokenizer = DistilBertTokenizer.from_pretrained(MODEL_PATH)
+    model = DistilBertForSequenceClassification.from_pretrained(MODEL_PATH)
+    model.to(device)
+except Exception as e:
+    print(f"Model load failed: {e}")
 
 # Function to extract text from a PDF resume
 def extract_text_from_pdf(pdf_path):
